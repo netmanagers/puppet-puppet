@@ -177,8 +177,8 @@
 #
 # [*service_autorestart*]
 #   Automatically restarts the puppet service when there is a change in
-#   configuration files. Default: true, Set to false if you don't want to
-#   automatically restart the service.
+#   configuration files. Default: false, to avoid race condition of restartin
+#   puppet during a puppet run.  Setting to true may create unpredictable results
 #
 # [*version*]
 #   The package version, used in the ensure parameter of package type.
@@ -305,6 +305,9 @@
 # [*config_file_init*]
 #   Path of configuration file sourced by init script
 #
+# [*config_file_init_template*]
+#   Template for the init config file
+#
 # [*pid_file*]
 #   Path of pid file. Used by monitor
 #
@@ -396,6 +399,7 @@ class puppet (
   $pid_file_server     = params_lookup( 'pid_file_server' ),
   $process_args_server = params_lookup( 'process_args_server' ),
   $process_user_server = params_lookup( 'process_user_server' ),
+  $process_group_server = params_lookup( 'process_group_server' ),
   $version_server      = params_lookup( 'version_server' ),
   $version_puppetdb_terminus  = params_lookup( 'version_puppetdb_terminus' ),
   $service_server_autorestart = params_lookup( 'service_server_autorestart' ),
@@ -448,9 +452,11 @@ class puppet (
   $config_file_owner   = params_lookup( 'config_file_owner' ),
   $config_file_group   = params_lookup( 'config_file_group' ),
   $config_file_init    = params_lookup( 'config_file_init' ),
+  $config_file_init_template = params_lookup ( 'config_file_init_template' ),
   $pid_file            = params_lookup( 'pid_file' ),
   $data_dir            = params_lookup( 'data_dir' ),
   $log_dir             = params_lookup( 'log_dir' ),
+  $log_dir_mode        = params_lookup( 'log_dir_mode' ),
   $log_file            = params_lookup( 'log_file' ),
   $port                = params_lookup( 'port' ),
   $http_proxy_host     = params_lookup( 'http_proxy_host' , 'global' ),
@@ -657,6 +663,11 @@ class puppet (
     client => $puppet::process_user,
   }
 
+  $manage_log_dir_group = $puppet::mode ? {
+    server => $puppet::process_group_server,
+    client => $puppet::process_group,
+  }
+
   $version_puppet = split($::puppetversion, '[.]')
   $version_major = $version_puppet[0]
 
@@ -677,12 +688,13 @@ class puppet (
   }
 
   if ($::operatingsystem == 'Ubuntu'
-  or $::operatingsystem == 'Debian') {
+  or $::operatingsystem == 'Debian'
+  or $::operatingsystem == 'SLES') {
     file { 'default-puppet':
       ensure  => $puppet::manage_file,
       path    => $puppet::config_file_init,
       require => Package[puppet],
-      content => template('puppet/default.init-ubuntu'),
+      content => template($puppet::config_file_init_template),
       mode    => $puppet::config_file_mode,
       owner   => $puppet::config_file_owner,
       group   => $puppet::config_file_group,
@@ -733,9 +745,9 @@ class puppet (
   file { 'puppet.log.dir':
     ensure  => $puppet::manage_directory,
     path    => $puppet::log_dir,
-    mode    => '0750',
+    mode    => $puppet::log_dir_mode,
     owner   => $puppet::manage_log_dir_owner,
-    group   => $puppet::manage_log_dir_owner,
+    group   => $puppet::manage_log_dir_group,
     require => Package['puppet'],
     audit   => $puppet::manage_audit,
   }
