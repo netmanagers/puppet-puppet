@@ -13,16 +13,16 @@ class puppet::server inherits puppet {
     ensure   => $::puppet::manage_package_server,
     name     => $::puppet::package_server,
     notify   => $::puppet::manage_service_server_autorestart,
-    provider => $::puppet::package_provider,
+    provider => $::puppet::real_package_provider,
   }
 
   service { 'puppet_server':
-    ensure     => $::puppet::manage_service_server_ensure,
-    name       => $::puppet::service_server,
-    enable     => $::puppet::manage_service_server_enable,
-    hasstatus  => $::puppet::service_status,
-    pattern    => $::puppet::process_server,
-    require    => Package['puppet_server'],
+    ensure    => $::puppet::manage_service_server_ensure,
+    name      => $::puppet::service_server,
+    enable    => $::puppet::manage_service_server_enable,
+    hasstatus => $::puppet::service_status,
+    pattern   => $::puppet::process_server,
+    require   => Package['puppet_server'],
   }
 
   file { 'fileserver.conf':
@@ -110,7 +110,7 @@ class puppet::server inherits puppet {
   if $::puppet::bool_passenger == true { include puppet::server::passenger }
 
   ### remove stored reports after a week
-  if $::puppet::nodetool == "foreman" or $::puppet::nodetool == "dashboard" {
+  if $::puppet::nodetool == 'foreman' or $::puppet::nodetool == 'dashboard' {
     tidy { $::puppet::reports_dir:
       age     => $::puppet::reports_retention_age,
       recurse => true,

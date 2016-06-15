@@ -484,7 +484,7 @@ class puppet (
   $manifest_path       = params_lookup( 'manifest_path' ),
   $module_path         = params_lookup( 'module_path' ),
   $reports_dir         = params_lookup( 'reports_dir' ),
-  $reports_retention_age = params_lookup( 'reports_retention_age' ),
+  $reports_retention_age = params_lookup( 'reports_retention_age' )
   ) inherits puppet::params {
 
   $bool_enc_backup=any2bool($enc_backup)
@@ -731,12 +731,12 @@ class puppet (
   }
 
   service { 'puppet':
-    ensure     => $manage_service_ensure,
-    name       => $service,
-    enable     => $manage_service_enable,
-    hasstatus  => $service_status,
-    pattern    => $process,
-    require    => Package['puppet'],
+    ensure    => $manage_service_ensure,
+    name      => $service,
+    enable    => $manage_service_enable,
+    hasstatus => $service_status,
+    pattern   => $process,
+    require   => Package['puppet'],
   }
 
   if ($::operatingsystem == 'Ubuntu'
@@ -913,10 +913,10 @@ class puppet (
   case $::operatingsystem {
     /(?i:OpenBSD|FreeBSD)/: {
       cron { 'puppet_cron':
-        ensure   => $manage_file_cron,
-        command  => $croncommand,
-        user     => $process_user,
-        minute   => [ $tmp_cronminute , $tmp_cronminute2 ],
+        ensure  => $manage_file_cron,
+        command => $croncommand,
+        user    => $process_user,
+        minute  => [ $::puppet::params::tmp_cronminute , $::puppet::params::tmp_cronminute2 ],
       }
     }
     /(?i:Windows)/: { }
